@@ -110,7 +110,7 @@ export default function Home() {
           <div className="flex items-center space-x-3">
             {isMenuVisible && (
               <button
-                onClick={() => setIsMenuOpen(true)}
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="text-white hover:text-thai-yellow transition-colors duration-200"
               >
                 <Menu className="w-6 h-6" />
