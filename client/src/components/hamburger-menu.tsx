@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { X, RefreshCw, Settings } from "lucide-react";
+import { X, RefreshCw, Settings, Shield } from "lucide-react";
+import { Link } from "wouter";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
@@ -69,6 +70,17 @@ export default function HamburgerMenu({
               <RefreshCw className={`w-5 h-5 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
               {isRefreshing ? "กำลังรีเฟรช..." : "รีเฟรชข่าว"}
             </Button>
+
+            <Link href="/admin">
+              <Button
+                variant="outline"
+                className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
+                onClick={onClose}
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                หน้าแอดมิน
+              </Button>
+            </Link>
 
             <Button
               variant="outline"

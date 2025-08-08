@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertNewsArticleSchema } from "@shared/schema";
+import { insertNewsArticleSchema, insertRssSourceSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Simple RSS parser using built-in XML parsing
@@ -179,6 +179,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ results, updatedAt: new Date() });
     } catch (error) {
       res.status(500).json({ message: "Failed to refresh feeds" });
+    }
+  });
+
+  // Admin API routes for RSS source management
+  app.post("/api/admin/rss-sources", async (req, res) => {
+    try {
+      const validatedSource = insertRssSourceSchema.parse(req.body);
+      const newSource = await storage.createRssSource(validatedSource);
+      res.status(201).json(newSource);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create RSS source" });
+      }
+    }
+  });
+
+  app.put("/api/admin/rss-sources/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const updatedSource = await storage.updateRssSource(id, updateData);
+      
+      if (!updatedSource) {
+        res.status(404).json({ message: "RSS source not found" });
+        return;
+      }
+      
+      res.json(updatedSource);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update RSS source" });
+    }
+  });
+
+  app.delete("/api/admin/rss-sources/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteRssSource(id);
+      
+      if (!deleted) {
+        res.status(404).json({ message: "RSS source not found" });
+        return;
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete RSS source" });
     }
   });
 

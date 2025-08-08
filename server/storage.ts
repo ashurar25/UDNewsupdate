@@ -1,5 +1,7 @@
-import { type NewsArticle, type InsertNewsArticle, type RssSource, type InsertRssSource } from "@shared/schema";
+import { type NewsArticle, type InsertNewsArticle, type RssSource, type InsertRssSource, newsArticles, rssSources } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // News Articles
@@ -14,119 +16,109 @@ export interface IStorage {
   getRssSourceById(id: string): Promise<RssSource | undefined>;
   createRssSource(source: InsertRssSource): Promise<RssSource>;
   updateRssSource(id: string, source: Partial<RssSource>): Promise<RssSource | undefined>;
+  deleteRssSource(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private newsArticles: Map<string, NewsArticle>;
-  private rssSources: Map<string, RssSource>;
-
-  constructor() {
-    this.newsArticles = new Map();
-    this.rssSources = new Map();
-    
-    // Initialize default RSS sources
-    this.initializeRssSources();
-  }
-
-  private initializeRssSources() {
-    const defaultSources: InsertRssSource[] = [
-      {
-        name: "Matichon",
-        url: "https://www.matichon.co.th/rss/news",
-        isActive: true,
-      },
-      {
-        name: "TNN",
-        url: "https://www.tnnthailand.com/rss.xml",
-        isActive: true,
-      },
-      {
-        name: "Honekrasae",
-        url: "https://www.honekrasae.com/rss",
-        isActive: true,
-      },
-    ];
-
-    for (const source of defaultSources) {
-      this.createRssSource(source);
-    }
-  }
-
+export class DatabaseStorage implements IStorage {
   // News Articles methods
   async getNewsArticles(limit = 50, offset = 0, source?: string): Promise<NewsArticle[]> {
-    let articles = Array.from(this.newsArticles.values());
+    const baseQuery = db.select().from(newsArticles).orderBy(desc(newsArticles.publishedAt));
     
     if (source) {
-      articles = articles.filter(article => article.source === source);
+      const results = await baseQuery.where(eq(newsArticles.source, source)).limit(limit).offset(offset);
+      return results;
     }
     
-    // Sort by publishedAt descending
-    articles.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-    
-    return articles.slice(offset, offset + limit);
+    const results = await baseQuery.limit(limit).offset(offset);
+    return results;
   }
 
   async getNewsArticleByLink(link: string): Promise<NewsArticle | undefined> {
-    return Array.from(this.newsArticles.values()).find(article => article.link === link);
+    const [article] = await db.select().from(newsArticles).where(eq(newsArticles.link, link));
+    return article;
   }
 
   async createNewsArticle(insertArticle: InsertNewsArticle): Promise<NewsArticle> {
-    const id = randomUUID();
-    const article: NewsArticle = {
-      ...insertArticle,
-      id,
-      content: insertArticle.content || null,
-      description: insertArticle.description || null,
-      imageUrl: insertArticle.imageUrl || null,
-      createdAt: new Date(),
-    };
-    this.newsArticles.set(id, article);
+    const [article] = await db.insert(newsArticles).values(insertArticle).returning();
     return article;
   }
 
   async updateNewsArticle(id: string, updateData: Partial<NewsArticle>): Promise<NewsArticle | undefined> {
-    const existing = this.newsArticles.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...updateData };
-    this.newsArticles.set(id, updated);
+    const [updated] = await db.update(newsArticles)
+      .set(updateData)
+      .where(eq(newsArticles.id, id))
+      .returning();
     return updated;
   }
 
   async deleteNewsArticle(id: string): Promise<boolean> {
-    return this.newsArticles.delete(id);
+    const result = await db.delete(newsArticles).where(eq(newsArticles.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // RSS Sources methods
   async getRssSources(): Promise<RssSource[]> {
-    return Array.from(this.rssSources.values());
+    const sources = await db.select().from(rssSources);
+    return sources;
   }
 
   async getRssSourceById(id: string): Promise<RssSource | undefined> {
-    return this.rssSources.get(id);
+    const [source] = await db.select().from(rssSources).where(eq(rssSources.id, id));
+    return source;
   }
 
   async createRssSource(insertSource: InsertRssSource): Promise<RssSource> {
-    const id = randomUUID();
-    const source: RssSource = {
-      ...insertSource,
-      id,
-      isActive: insertSource.isActive ?? true,
-      lastFetched: null,
-      status: "online",
-    };
-    this.rssSources.set(id, source);
+    const [source] = await db.insert(rssSources).values(insertSource).returning();
     return source;
   }
 
   async updateRssSource(id: string, updateData: Partial<RssSource>): Promise<RssSource | undefined> {
-    const existing = this.rssSources.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...updateData };
-    this.rssSources.set(id, updated);
+    const [updated] = await db.update(rssSources)
+      .set(updateData)
+      .where(eq(rssSources.id, id))
+      .returning();
     return updated;
+  }
+
+  async deleteRssSource(id: string): Promise<boolean> {
+    const result = await db.delete(rssSources).where(eq(rssSources.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
 
-export const storage = new MemStorage();
+// Initialize default RSS sources if needed
+async function initializeDefaultSources() {
+  try {
+    const existingSources = await db.select().from(rssSources);
+    
+    if (existingSources.length === 0) {
+      const defaultSources: InsertRssSource[] = [
+        {
+          name: "Matichon",
+          url: "https://www.matichon.co.th/rss/news",
+          isActive: true,
+        },
+        {
+          name: "TNN",
+          url: "https://www.tnnthailand.com/rss.xml",
+          isActive: true,
+        },
+        {
+          name: "Honekrasae",
+          url: "https://www.honekrasae.com/rss",
+          isActive: true,
+        },
+      ];
+
+      await db.insert(rssSources).values(defaultSources);
+      console.log("Default RSS sources initialized");
+    }
+  } catch (error) {
+    console.error("Failed to initialize default RSS sources:", error);
+  }
+}
+
+export const storage = new DatabaseStorage();
+
+// Initialize default sources on startup
+initializeDefaultSources();

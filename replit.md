@@ -2,6 +2,8 @@
 
 This is a Thai news aggregation web application called "อัพเดทข่าวอุดร - UD News Update" that automatically collects and displays news articles from multiple RSS sources including Matichon, TNN, and Honekrasae. The application provides real-time news updates with a clean, mobile-responsive interface designed specifically for Thai users.
 
+The application now includes an admin panel for managing RSS sources with full CRUD operations, status monitoring, and database persistence using PostgreSQL.
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -32,14 +34,15 @@ The backend is a Node.js Express server designed for RSS feed aggregation:
 The server implements a storage abstraction layer through the IStorage interface, currently backed by MemStorage but designed to easily swap to database implementations.
 
 ## Data Storage Solutions
-The application uses a dual approach for data persistence:
+The application uses PostgreSQL with Drizzle ORM for data persistence:
 
-- **Current**: In-memory storage (MemStorage class) for development and testing
-- **Configured**: PostgreSQL with Drizzle ORM for production deployment
+- **Database**: PostgreSQL with Neon serverless hosting
+- **ORM**: Drizzle ORM with full TypeScript type safety
 - **Schema**: Well-defined database schemas for news articles and RSS sources with proper indexing and constraints
 - **Migration**: Drizzle Kit for database schema management and migrations
+- **Admin Interface**: Complete admin panel for managing RSS sources with CRUD operations
 
-The database schema includes tables for news articles (with title, content, source, publication date) and RSS sources (with URL, status tracking, and activity flags).
+The database schema includes tables for news articles (with title, content, source, publication date) and RSS sources (with URL, status tracking, and activity flags). The admin panel allows real-time management of RSS sources including adding, editing, deleting, and toggling activation status.
 
 ## Authentication and Authorization
 Currently, the application operates without user authentication as it's designed as a public news aggregation service. The architecture supports future authentication implementation through middleware patterns already established in the Express server.
