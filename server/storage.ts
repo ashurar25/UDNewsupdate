@@ -187,16 +187,26 @@ async function initializeDefaults() {
         {
           name: "Matichon",
           url: "https://www.matichon.co.th/rss/news",
-          isActive: true,
+          isActive: false, // Temporarily disabled due to 403 errors
         },
         {
           name: "TNN",
-          url: "https://www.tnnthailand.com/rss.xml",
-          isActive: true,
+          url: "https://www.tnnthailand.com/rss.xml", 
+          isActive: false, // Temporarily disabled due to 403 errors
         },
         {
           name: "Honekrasae",
           url: "https://www.honekrasae.com/rss",
+          isActive: false, // Temporarily disabled due to 404 errors
+        },
+        {
+          name: "Thai PBS",
+          url: "https://news.thaipbs.or.th/rss/news.xml",
+          isActive: true,
+        },
+        {
+          name: "Manager Online",
+          url: "https://mgronline.com/rss/",
           isActive: true,
         },
       ];
