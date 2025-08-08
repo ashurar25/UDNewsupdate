@@ -4,7 +4,7 @@ import { type NewsArticle, type RssSource } from "@shared/schema";
 import NewsCard from "@/components/news-card";
 import HamburgerMenu from "@/components/hamburger-menu";
 import { Button } from "@/components/ui/button";
-import { Menu, RefreshCw } from "lucide-react";
+import { Menu, RefreshCw, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -184,7 +184,7 @@ export default function Home() {
         {!articlesLoading && articles.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg mb-4">
-              {selectedSource ? `ไม่พบข่าวจาก ${getSourceDisplayName(selectedSource)}` : "ไม่พบข่าวในขณะนี้"}
+              {selectedCategory ? `ไม่พบข่าวในหมวด ${selectedCategory}` : "ไม่พบข่าวในขณะนี้"}
             </div>
             <Button
               onClick={handleRefresh}
