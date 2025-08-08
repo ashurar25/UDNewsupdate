@@ -3,8 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type NewsArticle, type RssSource } from "@shared/schema";
 import NewsCard from "@/components/news-card";
 import HamburgerMenu from "@/components/hamburger-menu";
-import StatusBar from "@/components/status-bar";
-import RssStatus from "@/components/rss-status";
 import { Button } from "@/components/ui/button";
 import { Menu, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -123,12 +121,6 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {/* Status Bar */}
-        <StatusBar 
-          rssSources={rssSources}
-          onRefresh={handleRefresh}
-          isRefreshing={refreshFeedsMutation.isPending}
-        />
 
         {/* Loading State */}
         {articlesLoading && (
@@ -200,8 +192,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* RSS Status Footer */}
-        <RssStatus rssSources={rssSources} />
+        
       </main>
 
       {/* Footer */}
