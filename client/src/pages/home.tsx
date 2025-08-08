@@ -5,13 +5,12 @@ import NewsCard from "@/components/news-card";
 import HamburgerMenu from "@/components/hamburger-menu";
 import WeatherCard from "@/components/weather-card";
 import { Button } from "@/components/ui/button";
-import { Menu, RefreshCw, X, EyeOff, Eye } from "lucide-react";
+import { Menu, RefreshCw, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMenuVisible, setIsMenuVisible] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -104,20 +103,11 @@ export default function Home() {
       <header className="bg-gradient-to-r from-thai-orange via-orange-500 to-thai-orange shadow-xl relative z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {isMenuVisible && (
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-white hover:text-thai-yellow transition-colors duration-200"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-            )}
             <button
-              onClick={() => setIsMenuVisible(!isMenuVisible)}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="text-white hover:text-thai-yellow transition-colors duration-200"
-              title={isMenuVisible ? "ซ่อนเมนู" : "แสดงเมนู"}
             >
-              {isMenuVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              <Menu className="w-6 h-6" />
             </button>
           </div>
 
@@ -131,17 +121,15 @@ export default function Home() {
 
 
       {/* Hamburger Menu */}
-      {isMenuVisible && (
-        <HamburgerMenu
-          isOpen={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
-          selectedCategory={selectedCategory}
-          onCategoryFilter={handleCategoryFilter}
-          onRefresh={handleRefresh}
-          isRefreshing={refreshFeedsMutation.isPending}
-          onSearch={handleSearch}
-        />
-      )}
+      <HamburgerMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        selectedCategory={selectedCategory}
+        onCategoryFilter={handleCategoryFilter}
+        onRefresh={handleRefresh}
+        isRefreshing={refreshFeedsMutation.isPending}
+        onSearch={handleSearch}
+      />
 
       {/* Search Modal - placeholder for future implementation */}
       {isSearchOpen && (
