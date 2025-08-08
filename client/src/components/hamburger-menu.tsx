@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { X, RefreshCw, Settings, Shield, Search } from "lucide-react";
 import { Link } from "wouter";
 
@@ -36,7 +37,7 @@ export default function HamburgerMenu({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40">
       <div className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
-        <div className="p-6">
+        <div className="flex flex-col h-full p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-800">เมนูหลัก</h2>
             <button
@@ -48,65 +49,67 @@ export default function HamburgerMenu({
           </div>
 
           {/* Navigation Menu */}
-          <nav className="space-y-4">
-            {categories.map((category) => (
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <nav className="space-y-4 pb-4">
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  onClick={() => onCategoryFilter(category.id)}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  className={`w-full justify-start text-left ${
+                    selectedCategory === category.id
+                      ? "bg-thai-yellow hover:bg-thai-yellow/90 text-gray-800 border-thai-yellow"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {category.name}
+                </Button>
+              ))}
+
+              <hr className="my-6 border-gray-200" />
+
               <Button
-                key={category.id}
-                onClick={() => onCategoryFilter(category.id)}
-                variant={selectedCategory === category.id ? "default" : "outline"}
-                className={`w-full justify-start text-left ${
-                  selectedCategory === category.id
-                    ? "bg-thai-yellow hover:bg-thai-yellow/90 text-gray-800 border-thai-yellow"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
+                onClick={() => {
+                  onSearch();
+                  onClose();
+                }}
+                variant="outline"
+                className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
               >
-                {category.name}
+                <Search className="w-5 h-5 mr-2" />
+                ค้นหาข่าว
               </Button>
-            ))}
 
-            <hr className="my-6 border-gray-200" />
+              <Button
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                variant="outline"
+                className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                <RefreshCw className={`w-5 h-5 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                {isRefreshing ? "กำลังรีเฟรช..." : "รีเฟรชข่าว"}
+              </Button>
 
-            <Button
-              onClick={() => {
-                onSearch();
-                onClose();
-              }}
-              variant="outline"
-              className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <Search className="w-5 h-5 mr-2" />
-              ค้นหาข่าว
-            </Button>
+              <Link href="/admin">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
+                  onClick={onClose}
+                >
+                  <Shield className="w-5 h-5 mr-2" />
+                  หน้าแอดมิน
+                </Button>
+              </Link>
 
-            <Button
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              variant="outline"
-              className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <RefreshCw className={`w-5 h-5 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-              {isRefreshing ? "กำลังรีเฟรช..." : "รีเฟรชข่าว"}
-            </Button>
-
-            <Link href="/admin">
               <Button
                 variant="outline"
                 className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
-                onClick={onClose}
               >
-                <Shield className="w-5 h-5 mr-2" />
-                หน้าแอดมิน
+                <Settings className="w-5 h-5 mr-2" />
+                ตั้งค่า
               </Button>
-            </Link>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              <Settings className="w-5 h-5 mr-2" />
-              ตั้งค่า
-            </Button>
-          </nav>
+            </nav>
+          </ScrollArea>
         </div>
       </div>
     </div>
