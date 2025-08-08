@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type NewsArticle, type RssSource } from "@shared/schema";
 import NewsCard from "@/components/news-card";
 import HamburgerMenu from "@/components/hamburger-menu";
+import WeatherCard from "@/components/weather-card";
 import { Button } from "@/components/ui/button";
 import { Menu, RefreshCw, X, EyeOff, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +17,7 @@ export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const pageSize = 12;
   const offset = (currentPage - 1) * pageSize;
 
@@ -32,7 +33,7 @@ export default function Home() {
     refetchInterval: 60 * 1000, // Refetch every minute
   });
 
-  
+
 
   // Refresh feeds mutation
   const refreshFeedsMutation = useMutation({
@@ -43,10 +44,10 @@ export default function Home() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/news"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rss-sources"] });
-      
+
       const successCount = data.results.filter((r: any) => r.status === "success").length;
       const errorCount = data.results.filter((r: any) => r.status === "error").length;
-      
+
       toast({
         title: "อัพเดทข่าวสำเร็จ",
         description: `อัพเดทสำเร็จ ${successCount} แหล่ง${errorCount > 0 ? `, ล้มเหลว ${errorCount} แหล่ง` : ""}`,
@@ -119,11 +120,11 @@ export default function Home() {
               {isMenuVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          
+
           <h1 className="text-white text-xl lg:text-2xl font-bold text-center flex-1">
             อัพเดทข่าวอุดร - UD News Update
           </h1>
-          
+
           <div className="w-16" /> {/* Spacer for balance */}
         </div>
       </header>
@@ -169,6 +170,11 @@ export default function Home() {
             <span className="text-thai-orange mr-2">📰</span>
             ข่าวล่าสุด
           </h2>
+
+          {/* Weather Card */}
+          <div className="mb-8">
+            <WeatherCard />
+          </div>
 
           {/* Loading State */}
           {articlesLoading && (
