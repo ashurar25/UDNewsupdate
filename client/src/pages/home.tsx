@@ -154,105 +154,97 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {/* Weather Section */}
-        {weatherLocations.length > 0 && (
-          <section className="mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* News Section - Left Side */}
+          <div className="lg:col-span-2">
+            <section>
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              <span className="text-thai-orange mr-2">🌤️</span>
-              สภาพอากาศ
+              <span className="text-thai-orange mr-2">📰</span>
+              ข่าวล่าสุด
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {weatherLocations.slice(0, 3).map((location) => (
-                <WeatherCard
-                  key={location.id}
-                  locationId={location.id}
-                  locationName={location.name}
-                />
-              ))}
-            </div>
-            <hr className="border-gray-200" />
-          </section>
-        )}
 
-        {/* News Section */}
-        <section>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-            <span className="text-thai-orange mr-2">📰</span>
-            ข่าวล่าสุด
-          </h2>
-
-        {/* Loading State */}
-        {articlesLoading && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-md animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-t-xl"></div>
-                <div className="p-6">
-                  <div className="h-4 bg-gray-200 rounded mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-3 w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded mb-2 w-5/6"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </div>
+            {/* Loading State */}
+            {articlesLoading && (
+              <div className="grid grid-cols-1 gap-6 mb-8">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-xl shadow-md animate-pulse">
+                    <div className="h-48 bg-gray-200 rounded-t-xl"></div>
+                    <div className="p-6">
+                      <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                      <div className="h-4 bg-gray-200 rounded mb-3 w-3/4"></div>
+                      <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded mb-2 w-5/6"></div>
+                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {/* News Grid - Fixed 2 Columns */}
-        {!articlesLoading && articles.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {articles.map((article) => (
-              <NewsCard
-                key={article.id}
-                article={article}
-                sourceDisplayName={getSourceDisplayName(article.source)}
-                sourceColor={getSourceColor(article.source)}
+            {/* News Grid - Single Column */}
+            {!articlesLoading && articles.length > 0 && (
+              <div className="grid grid-cols-1 gap-6 mb-8">
+                {articles.map((article) => (
+                  <NewsCard
+                    key={article.id}
+                    article={article}
+                    sourceDisplayName={getSourceDisplayName(article.source)}
+                    sourceColor={getSourceColor(article.source)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!articlesLoading && articles.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500 text-lg mb-4">
+                  {selectedCategory ? `ไม่พบข่าวในหมวด ${selectedCategory}` : "ไม่พบข่าวในขณะนี้"}
+                </div>
+                <Button
+                  onClick={handleRefresh}
+                  disabled={refreshFeedsMutation.isPending}
+                  className="bg-thai-yellow hover:bg-opacity-90 text-gray-800"
+                >
+                  {refreshFeedsMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      กำลังอัพเดท...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      รีเฟรชข่าว
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {!articlesLoading && articles.length >= pageSize && (
+              <div className="text-center">
+                <Button
+                  onClick={handleLoadMore}
+                  className="bg-thai-yellow hover:bg-opacity-90 text-gray-800 font-medium px-8 py-3 shadow-md"
+                >
+                  โหลดข่าวเพิ่มเติม
+                </Button>
+              </div>
+            )}
+            </section>
+          </div>
+
+          {/* Weather Section - Right Side (Udon Thani Only) */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6">
+              <WeatherCard
+                locationId="172340b4-ef6b-4314-b55c-42769d6bdf74"
+                locationName="อุดรธานี"
               />
-            ))}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!articlesLoading && articles.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-4">
-              {selectedCategory ? `ไม่พบข่าวในหมวด ${selectedCategory}` : "ไม่พบข่าวในขณะนี้"}
             </div>
-            <Button
-              onClick={handleRefresh}
-              disabled={refreshFeedsMutation.isPending}
-              className="bg-thai-yellow hover:bg-opacity-90 text-gray-800"
-            >
-              {refreshFeedsMutation.isPending ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  กำลังอัพเดท...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  รีเฟรชข่าว
-                </>
-              )}
-            </Button>
           </div>
-        )}
-
-        {/* Load More Button */}
-        {!articlesLoading && articles.length >= pageSize && (
-          <div className="text-center">
-            <Button
-              onClick={handleLoadMore}
-              className="bg-thai-yellow hover:bg-opacity-90 text-gray-800 font-medium px-8 py-3 shadow-md"
-            >
-              โหลดข่าวเพิ่มเติม
-            </Button>
-          </div>
-        )}
-        </section>
-
-        
+        </div>
       </main>
 
       {/* Footer */}
