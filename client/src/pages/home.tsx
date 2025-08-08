@@ -2,15 +2,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type NewsArticle, type RssSource, type WeatherLocation } from "@shared/schema";
 import NewsCard from "@/components/news-card";
-import HamburgerMenu from "@/components/hamburger-menu";
 import WeatherCard from "@/components/weather-card";
 import { Button } from "@/components/ui/button";
-import { Menu, RefreshCw, X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -105,32 +103,13 @@ export default function Home() {
     <div className="min-h-screen bg-soft-white">
       {/* Header */}
       <header className="bg-thai-orange shadow-lg relative z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => setIsMenuOpen(true)}
-            className="text-white hover:text-thai-yellow transition-colors duration-200"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          
-          <h1 className="text-white text-xl lg:text-2xl font-bold text-center flex-1 lg:flex-none">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-white text-xl lg:text-2xl font-bold text-center">
             อัพเดทข่าวอุดร - UD News Update
           </h1>
-          
-          <div className="w-6" /> {/* Spacer for balance */}
         </div>
       </header>
 
-      {/* Hamburger Menu */}
-      <HamburgerMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        selectedCategory={selectedCategory}
-        onCategoryFilter={handleCategoryFilter}
-        onRefresh={handleRefresh}
-        isRefreshing={refreshFeedsMutation.isPending}
-        onSearch={handleSearch}
-      />
 
       {/* Search Modal - placeholder for future implementation */}
       {isSearchOpen && (
