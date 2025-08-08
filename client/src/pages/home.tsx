@@ -3,12 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type NewsArticle, type RssSource, type WeatherLocation } from "@shared/schema";
 import NewsCard from "@/components/news-card";
 import WeatherCard from "@/components/weather-card";
+import HamburgerMenu from "@/components/hamburger-menu";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, X } from "lucide-react";
+import { Menu, RefreshCw, X, EyeOff, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -103,13 +106,46 @@ export default function Home() {
     <div className="min-h-screen bg-soft-white">
       {/* Header */}
       <header className="bg-thai-orange shadow-lg relative z-50">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-white text-xl lg:text-2xl font-bold text-center">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {isMenuVisible && (
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="text-white hover:text-thai-yellow transition-colors duration-200"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            )}
+            <button
+              onClick={() => setIsMenuVisible(!isMenuVisible)}
+              className="text-white hover:text-thai-yellow transition-colors duration-200"
+              title={isMenuVisible ? "ซ่อนเมนู" : "แสดงเมนู"}
+            >
+              {isMenuVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+          
+          <h1 className="text-white text-xl lg:text-2xl font-bold text-center flex-1">
             อัพเดทข่าวอุดร - UD News Update
           </h1>
+          
+          <div className="w-16" /> {/* Spacer for balance */}
         </div>
       </header>
 
+
+      {/* Hamburger Menu */}
+      {isMenuVisible && (
+        <HamburgerMenu
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          selectedCategory={selectedCategory}
+          onCategoryFilter={handleCategoryFilter}
+          onRefresh={handleRefresh}
+          isRefreshing={refreshFeedsMutation.isPending}
+          onSearch={handleSearch}
+        />
+      )}
 
       {/* Search Modal - placeholder for future implementation */}
       {isSearchOpen && (
