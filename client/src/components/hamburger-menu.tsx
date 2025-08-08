@@ -36,10 +36,16 @@ export default function HamburgerMenu({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40">
-      <div className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+      <div
+      className={`fixed left-0 top-0 h-full w-80 bg-gradient-to-b from-white via-blue-50 to-orange-50 shadow-2xl transform transition-transform duration-300 ease-in-out z-40 overflow-y-auto ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
         <div className="flex flex-col h-full p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-800">เมนูหลัก</h2>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-thai-orange to-orange-600 bg-clip-text text-transparent mb-6 border-b-2 border-gradient-to-r from-thai-orange to-orange-600 pb-4">
+          เมนูหลัก
+        </h2>
             <button
               onClick={onClose}
               className="text-gray-600 hover:text-thai-orange transition-colors"

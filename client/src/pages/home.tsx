@@ -99,9 +99,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-soft-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
       {/* Header */}
-      <header className="bg-thai-orange shadow-lg relative z-50">
+      <header className="bg-gradient-to-r from-thai-orange via-orange-500 to-thai-orange shadow-xl relative z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {isMenuVisible && (
@@ -171,11 +171,6 @@ export default function Home() {
             ข่าวล่าสุด
           </h2>
 
-          {/* Weather Card */}
-          <div className="mb-8">
-            <WeatherCard />
-          </div>
-
           {/* Loading State */}
           {articlesLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -217,7 +212,7 @@ export default function Home() {
               <Button
                 onClick={handleRefresh}
                 disabled={refreshFeedsMutation.isPending}
-                className="bg-thai-yellow hover:bg-opacity-90 text-gray-800"
+                className="bg-gradient-to-r from-thai-yellow to-yellow-400 hover:from-thai-yellow/90 hover:to-yellow-400/90 text-gray-800 shadow-lg transform hover:scale-105 transition-all duration-200"
               >
                 {refreshFeedsMutation.isPending ? (
                   <>
@@ -236,15 +231,24 @@ export default function Home() {
 
           {/* Load More Button */}
           {!articlesLoading && articles.length >= pageSize && (
-            <div className="text-center">
+            <div className="text-center mb-12">
               <Button
                 onClick={handleLoadMore}
-                className="bg-thai-yellow hover:bg-opacity-90 text-gray-800 font-medium px-8 py-3 shadow-md"
+                className="bg-gradient-to-r from-thai-yellow to-yellow-400 hover:from-thai-yellow/90 hover:to-yellow-400/90 text-gray-800 font-medium px-8 py-3 shadow-lg transform hover:scale-105 transition-all duration-200"
               >
                 โหลดข่าวเพิ่มเติม
               </Button>
             </div>
           )}
+
+          {/* Weather Card Section */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center justify-center">
+              <span className="text-blue-500 mr-2">🌤️</span>
+              สภาพอากาศ
+            </h2>
+            <WeatherCard />
+          </section>
         </section>
       </main>
 

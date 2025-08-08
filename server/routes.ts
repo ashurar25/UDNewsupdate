@@ -39,13 +39,22 @@ async function parseRSSFeed(url: string, sourceName: string) {
         const existing = await storage.getNewsArticleByLink(item.link);
         if (existing) continue;
         
+        // หารูปภาพจาก description ถ้าไม่มีรูปใน enclosure
+        let finalImageUrl = item.imageUrl;
+        if (!finalImageUrl && item.description) {
+          const imgInDescMatch = item.description.match(/<img[^>]*src="([^"]*)"[^>]*>/i);
+          if (imgInDescMatch) {
+            finalImageUrl = imgInDescMatch[1];
+          }
+        }
+
         const article = {
           title: item.title,
           description: item.description,
           content: item.description, // Use description as content for RSS
           link: item.link,
           source: sourceName.toLowerCase(),
-          imageUrl: item.imageUrl,
+          imageUrl: finalImageUrl,
           publishedAt: item.publishedAt,
         };
         
@@ -74,7 +83,7 @@ function extractRSSItems(xmlText: string) {
   const descRegex = /<description[^>]*><!\[CDATA\[(.*?)\]\]><\/description>|<description[^>]*>(.*?)<\/description>/i;
   const linkRegex = /<link[^>]*>(.*?)<\/link>/i;
   const pubDateRegex = /<pubDate[^>]*>(.*?)<\/pubDate>/i;
-  const imageRegex = /<enclosure[^>]*url="([^"]*)"[^>]*type="image[^"]*"|<media:thumbnail[^>]*url="([^"]*)"/i;
+  const imageRegex = /<enclosure[^>]*url="([^"]*)"[^>]*type="image[^"]*"|<media:thumbnail[^>]*url="([^"]*)"|<media:content[^>]*url="([^"]*)"[^>]*medium="image"|<image[^>]*><url[^>]*>([^<]*)<\/url>|<img[^>]*src="([^"]*)"/i;
   
   let match;
   while ((match = itemRegex.exec(xmlText)) !== null) {
@@ -90,7 +99,7 @@ function extractRSSItems(xmlText: string) {
       const title = (titleMatch[1] || titleMatch[2] || '').trim();
       const description = (descMatch?.[1] || descMatch?.[2] || '').trim();
       const link = linkMatch[1].trim();
-      const imageUrl = imageMatch?.[1] || imageMatch?.[2] || null;
+      const imageUrl = imageMatch?.[1] || imageMatch?.[2] || imageMatch?.[3] || imageMatch?.[4] || imageMatch?.[5] || null;
       
       let publishedAt = new Date();
       if (pubDateMatch) {
