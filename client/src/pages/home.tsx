@@ -10,8 +10,9 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedSource, setSelectedSource] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -20,7 +21,7 @@ export default function Home() {
 
   // Fetch news articles
   const { data: articles = [], isLoading: articlesLoading } = useQuery<NewsArticle[]>({
-    queryKey: ["/api/news", { limit: pageSize, offset, source: selectedSource }],
+    queryKey: ["/api/news", { limit: pageSize, offset, category: selectedCategory }],
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
@@ -57,10 +58,14 @@ export default function Home() {
     },
   });
 
-  const handleSourceFilter = (source: string) => {
-    setSelectedSource(source);
+  const handleCategoryFilter = (category: string) => {
+    setSelectedCategory(category);
     setCurrentPage(1);
     setIsMenuOpen(false);
+  };
+
+  const handleSearch = () => {
+    setIsSearchOpen(true);
   };
 
   const handleLoadMore = () => {
@@ -113,11 +118,32 @@ export default function Home() {
       <HamburgerMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        selectedSource={selectedSource}
-        onSourceFilter={handleSourceFilter}
+        selectedCategory={selectedCategory}
+        onCategoryFilter={handleCategoryFilter}
         onRefresh={handleRefresh}
         isRefreshing={refreshFeedsMutation.isPending}
+        onSearch={handleSearch}
       />
+
+      {/* Search Modal - placeholder for future implementation */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">ค้นหาข่าว</h3>
+              <button
+                onClick={() => setIsSearchOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 text-center py-8">
+              ฟีเจอร์ค้นหาข่าวจะเพิ่มเข้ามาในอนาคต
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">

@@ -1,31 +1,36 @@
 import { Button } from "@/components/ui/button";
-import { X, RefreshCw, Settings, Shield } from "lucide-react";
+import { X, RefreshCw, Settings, Shield, Search } from "lucide-react";
 import { Link } from "wouter";
 
 interface HamburgerMenuProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedSource: string;
-  onSourceFilter: (source: string) => void;
+  selectedCategory: string;
+  onCategoryFilter: (category: string) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
+  onSearch: () => void;
 }
 
 export default function HamburgerMenu({
   isOpen,
   onClose,
-  selectedSource,
-  onSourceFilter,
+  selectedCategory,
+  onCategoryFilter,
   onRefresh,
   isRefreshing,
+  onSearch,
 }: HamburgerMenuProps) {
   if (!isOpen) return null;
 
-  const sources = [
+  const categories = [
     { id: "", name: "ข่าวทั้งหมด" },
-    { id: "matichon", name: "ข่าว Matichon" },
-    { id: "tnn", name: "ข่าว TNN" },
-    { id: "honekrasae", name: "ข่าว Honekrasae" },
+    { id: "local", name: "ข่าวท้องถิ่น" },
+    { id: "crime", name: "ข่าวอาชญากรรม" },
+    { id: "accident", name: "ข่าวอุบัติเหตุ" },
+    { id: "politics", name: "ข่าวการเมือง" },
+    { id: "international", name: "ข่าวต่างประเทศ" },
+    { id: "general", name: "ข่าวทั่วไป" },
   ];
 
   return (
@@ -44,22 +49,34 @@ export default function HamburgerMenu({
 
           {/* Navigation Menu */}
           <nav className="space-y-4">
-            {sources.map((source) => (
+            {categories.map((category) => (
               <Button
-                key={source.id}
-                onClick={() => onSourceFilter(source.id)}
-                variant={selectedSource === source.id ? "default" : "outline"}
+                key={category.id}
+                onClick={() => onCategoryFilter(category.id)}
+                variant={selectedCategory === category.id ? "default" : "outline"}
                 className={`w-full justify-start text-left ${
-                  selectedSource === source.id
+                  selectedCategory === category.id
                     ? "bg-thai-yellow hover:bg-thai-yellow/90 text-gray-800 border-thai-yellow"
                     : "border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                {source.name}
+                {category.name}
               </Button>
             ))}
 
             <hr className="my-6 border-gray-200" />
+
+            <Button
+              onClick={() => {
+                onSearch();
+                onClose();
+              }}
+              variant="outline"
+              className="w-full justify-start border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              <Search className="w-5 h-5 mr-2" />
+              ค้นหาข่าว
+            </Button>
 
             <Button
               onClick={onRefresh}
