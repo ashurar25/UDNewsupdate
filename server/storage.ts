@@ -1,7 +1,7 @@
-import { type NewsArticle, type InsertNewsArticle, type RssSource, type InsertRssSource, newsArticles, rssSources } from "@shared/schema";
+import { type NewsArticle, type InsertNewsArticle, type RssSource, type InsertRssSource, type WeatherLocation, type InsertWeatherLocation, type WeatherForecast, type InsertWeatherForecast, newsArticles, rssSources, weatherLocations, weatherForecast } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // News Articles
@@ -17,6 +17,20 @@ export interface IStorage {
   createRssSource(source: InsertRssSource): Promise<RssSource>;
   updateRssSource(id: string, source: Partial<RssSource>): Promise<RssSource | undefined>;
   deleteRssSource(id: string): Promise<boolean>;
+  
+  // Weather Locations
+  getWeatherLocations(): Promise<WeatherLocation[]>;
+  getWeatherLocationById(id: string): Promise<WeatherLocation | undefined>;
+  createWeatherLocation(location: InsertWeatherLocation): Promise<WeatherLocation>;
+  updateWeatherLocation(id: string, location: Partial<WeatherLocation>): Promise<WeatherLocation | undefined>;
+  deleteWeatherLocation(id: string): Promise<boolean>;
+  
+  // Weather Forecast
+  getWeatherForecast(locationId: string, startDate?: Date, endDate?: Date, isHistorical?: boolean): Promise<WeatherForecast[]>;
+  getWeatherForecastById(id: string): Promise<WeatherForecast | undefined>;
+  createWeatherForecast(forecast: InsertWeatherForecast): Promise<WeatherForecast>;
+  updateWeatherForecast(id: string, forecast: Partial<WeatherForecast>): Promise<WeatherForecast | undefined>;
+  deleteWeatherForecast(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -84,11 +98,88 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(rssSources).where(eq(rssSources.id, id));
     return result.rowCount !== null && result.rowCount > 0;
   }
+
+  // Weather Locations methods
+  async getWeatherLocations(): Promise<WeatherLocation[]> {
+    const locations = await db.select().from(weatherLocations).where(eq(weatherLocations.isActive, true));
+    return locations;
+  }
+
+  async getWeatherLocationById(id: string): Promise<WeatherLocation | undefined> {
+    const [location] = await db.select().from(weatherLocations).where(eq(weatherLocations.id, id));
+    return location;
+  }
+
+  async createWeatherLocation(insertLocation: InsertWeatherLocation): Promise<WeatherLocation> {
+    const [location] = await db.insert(weatherLocations).values(insertLocation).returning();
+    return location;
+  }
+
+  async updateWeatherLocation(id: string, updateData: Partial<WeatherLocation>): Promise<WeatherLocation | undefined> {
+    const [updated] = await db.update(weatherLocations)
+      .set(updateData)
+      .where(eq(weatherLocations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteWeatherLocation(id: string): Promise<boolean> {
+    const result = await db.delete(weatherLocations).where(eq(weatherLocations.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Weather Forecast methods
+  async getWeatherForecast(locationId: string, startDate?: Date, endDate?: Date, isHistorical?: boolean): Promise<WeatherForecast[]> {
+    const conditions = [eq(weatherForecast.locationId, locationId)];
+    
+    if (startDate) {
+      conditions.push(gte(weatherForecast.date, startDate));
+    }
+    
+    if (endDate) {
+      conditions.push(lte(weatherForecast.date, endDate));
+    }
+    
+    if (isHistorical !== undefined) {
+      conditions.push(eq(weatherForecast.isHistorical, isHistorical));
+    }
+
+    const results = await db.select().from(weatherForecast)
+      .where(and(...conditions))
+      .orderBy(desc(weatherForecast.date))
+      .limit(30);
+      
+    return results;
+  }
+
+  async getWeatherForecastById(id: string): Promise<WeatherForecast | undefined> {
+    const [forecast] = await db.select().from(weatherForecast).where(eq(weatherForecast.id, id));
+    return forecast;
+  }
+
+  async createWeatherForecast(insertForecast: InsertWeatherForecast): Promise<WeatherForecast> {
+    const [forecast] = await db.insert(weatherForecast).values(insertForecast).returning();
+    return forecast;
+  }
+
+  async updateWeatherForecast(id: string, updateData: Partial<WeatherForecast>): Promise<WeatherForecast | undefined> {
+    const [updated] = await db.update(weatherForecast)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(weatherForecast.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteWeatherForecast(id: string): Promise<boolean> {
+    const result = await db.delete(weatherForecast).where(eq(weatherForecast.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
 }
 
-// Initialize default RSS sources if needed
-async function initializeDefaultSources() {
+// Initialize default RSS sources and weather locations if needed
+async function initializeDefaults() {
   try {
+    // Initialize RSS sources
     const existingSources = await db.select().from(rssSources);
     
     if (existingSources.length === 0) {
@@ -113,12 +204,44 @@ async function initializeDefaultSources() {
       await db.insert(rssSources).values(defaultSources);
       console.log("Default RSS sources initialized");
     }
+
+    // Initialize weather locations
+    const existingLocations = await db.select().from(weatherLocations);
+    
+    if (existingLocations.length === 0) {
+      const defaultLocations: InsertWeatherLocation[] = [
+        {
+          name: "อุดรธานี",
+          nameEn: "Udon Thani",
+          latitude: 17.4138,
+          longitude: 102.7892,
+          isActive: true,
+        },
+        {
+          name: "กรุงเทพมหานคร",
+          nameEn: "Bangkok",
+          latitude: 13.7563,
+          longitude: 100.5018,
+          isActive: true,
+        },
+        {
+          name: "เชียงใหม่",
+          nameEn: "Chiang Mai",
+          latitude: 18.7883,
+          longitude: 98.9853,
+          isActive: true,
+        },
+      ];
+
+      await db.insert(weatherLocations).values(defaultLocations);
+      console.log("Default weather locations initialized");
+    }
   } catch (error) {
-    console.error("Failed to initialize default RSS sources:", error);
+    console.error("Failed to initialize defaults:", error);
   }
 }
 
 export const storage = new DatabaseStorage();
 
-// Initialize default sources on startup
-initializeDefaultSources();
+// Initialize defaults on startup
+initializeDefaults();

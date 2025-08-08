@@ -1,18 +1,27 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertNewsArticleSchema, insertRssSourceSchema } from "@shared/schema";
+import { insertNewsArticleSchema, insertRssSourceSchema, insertWeatherLocationSchema, insertWeatherForecastSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Simple RSS parser using built-in XML parsing
 async function parseRSSFeed(url: string, sourceName: string) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'UD-News-Aggregator/1.0',
-        'Accept': 'application/rss+xml, application/xml, text/xml'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+        'Accept-Language': 'th,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -51,7 +60,8 @@ async function parseRSSFeed(url: string, sourceName: string) {
     return articles;
   } catch (error) {
     console.error(`Error fetching RSS from ${url}:`, error);
-    throw error;
+    // Return empty array instead of throwing to allow partial success
+    return [];
   }
 }
 
@@ -258,6 +268,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }, autoRefreshInterval);
 
+  // Weather API routes
+  app.get("/api/weather/locations", async (req, res) => {
+    try {
+      const locations = await storage.getWeatherLocations();
+      res.json(locations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch weather locations" });
+    }
+  });
+
+  app.get("/api/weather/forecast/:locationId", async (req, res) => {
+    try {
+      const { locationId } = req.params;
+      const { days, historical } = req.query;
+      
+      const isHistorical = historical === "true";
+      const dayCount = parseInt(days as string) || 7;
+      
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
+      
+      if (isHistorical) {
+        // Get historical data for the past N days
+        endDate = new Date();
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - dayCount);
+      } else {
+        // Get forecast data for the next N days
+        startDate = new Date();
+        endDate = new Date();
+        endDate.setDate(endDate.getDate() + dayCount);
+      }
+      
+      const forecasts = await storage.getWeatherForecast(locationId, startDate, endDate, isHistorical);
+      res.json(forecasts);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch weather forecast" });
+    }
+  });
+
+  app.post("/api/weather/refresh", async (req, res) => {
+    try {
+      const locations = await storage.getWeatherLocations();
+      const results = [];
+      
+      for (const location of locations) {
+        if (!location.isActive) continue;
+        
+        try {
+          // Generate sample weather data for demo purposes
+          const weatherData = await generateSampleWeatherData(location);
+          
+          for (const data of weatherData) {
+            await storage.createWeatherForecast(data);
+          }
+          
+          results.push({
+            location: location.name,
+            status: "success",
+            dataCount: weatherData.length
+          });
+        } catch (error) {
+          results.push({
+            location: location.name,
+            status: "error",
+            error: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+      
+      res.json({ results, updatedAt: new Date() });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to refresh weather data" });
+    }
+  });
+
+  // Admin weather location management
+  app.post("/api/admin/weather/locations", async (req, res) => {
+    try {
+      const validatedLocation = insertWeatherLocationSchema.parse(req.body);
+      const newLocation = await storage.createWeatherLocation(validatedLocation);
+      res.status(201).json(newLocation);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to create weather location" });
+      }
+    }
+  });
+
+  app.put("/api/admin/weather/locations/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const updatedLocation = await storage.updateWeatherLocation(id, updateData);
+      
+      if (!updatedLocation) {
+        res.status(404).json({ message: "Weather location not found" });
+        return;
+      }
+      
+      res.json(updatedLocation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update weather location" });
+    }
+  });
+
+  app.delete("/api/admin/weather/locations/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteWeatherLocation(id);
+      
+      if (!deleted) {
+        res.status(404).json({ message: "Weather location not found" });
+        return;
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete weather location" });
+    }
+  });
+
   // Initial feed load
   setTimeout(async () => {
     console.log("Loading initial RSS feeds...");
@@ -275,4 +409,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
   return httpServer;
+}
+
+// Generate sample weather data for demo purposes
+async function generateSampleWeatherData(location: any) {
+  const weatherData = [];
+  
+  // Generate forecast for next 7 days
+  for (let i = 0; i < 7; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() + i);
+    
+    // Generate realistic weather data for Thailand
+    const baseTemp = 28 + Math.random() * 8; // 28-36°C range
+    const tempVariation = Math.random() * 6; // ±3°C variation
+    
+    weatherData.push({
+      locationId: location.id,
+      date,
+      temperature: Math.round(baseTemp),
+      temperatureMin: Math.round(baseTemp - tempVariation),
+      temperatureMax: Math.round(baseTemp + tempVariation),
+      humidity: Math.round(60 + Math.random() * 30), // 60-90%
+      pressure: Math.round(1008 + Math.random() * 8), // 1008-1016 hPa
+      windSpeed: Math.round(Math.random() * 15), // 0-15 m/s
+      windDirection: Math.round(Math.random() * 360), // 0-360 degrees
+      description: getRandomWeatherDescription(),
+      icon: getRandomWeatherIcon(),
+      rainChance: Math.round(Math.random() * 100), // 0-100%
+      rainfall: Math.random() * 20, // 0-20mm
+      isHistorical: false,
+    });
+  }
+  
+  // Generate historical data for past 7 days
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    
+    const baseTemp = 27 + Math.random() * 9; // 27-36°C range
+    const tempVariation = Math.random() * 6;
+    
+    weatherData.push({
+      locationId: location.id,
+      date,
+      temperature: Math.round(baseTemp),
+      temperatureMin: Math.round(baseTemp - tempVariation),
+      temperatureMax: Math.round(baseTemp + tempVariation),
+      humidity: Math.round(55 + Math.random() * 35), // 55-90%
+      pressure: Math.round(1005 + Math.random() * 12), // 1005-1017 hPa
+      windSpeed: Math.round(Math.random() * 12),
+      windDirection: Math.round(Math.random() * 360),
+      description: getRandomWeatherDescription(),
+      icon: getRandomWeatherIcon(),
+      rainChance: Math.round(Math.random() * 100),
+      rainfall: Math.random() * 25,
+      isHistorical: true,
+    });
+  }
+  
+  return weatherData;
+}
+
+function getRandomWeatherDescription(): string {
+  const descriptions = [
+    "แสงแดดจัด",
+    "เมฆเบาๆ",
+    "เมฆมาก",
+    "ฝนตกเล็กน้อย",
+    "ฝนตกหนัก",
+    "พายุฝนฟ้าคะนอง",
+    "หมอกบาง",
+    "อากาศแจ่มใส"
+  ];
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
+}
+
+function getRandomWeatherIcon(): string {
+  const icons = [
+    "sunny",
+    "partly-cloudy",
+    "cloudy",
+    "rainy",
+    "stormy",
+    "foggy"
+  ];
+  return icons[Math.floor(Math.random() * icons.length)];
 }

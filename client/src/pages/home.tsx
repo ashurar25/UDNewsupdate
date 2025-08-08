@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { type NewsArticle, type RssSource } from "@shared/schema";
+import { type NewsArticle, type RssSource, type WeatherLocation } from "@shared/schema";
 import NewsCard from "@/components/news-card";
 import HamburgerMenu from "@/components/hamburger-menu";
+import WeatherCard from "@/components/weather-card";
 import { Button } from "@/components/ui/button";
 import { Menu, RefreshCw, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,12 @@ export default function Home() {
   const { data: rssSources = [] } = useQuery<RssSource[]>({
     queryKey: ["/api/rss-sources"],
     refetchInterval: 60 * 1000, // Refetch every minute
+  });
+
+  // Fetch weather locations
+  const { data: weatherLocations = [] } = useQuery<WeatherLocation[]>({
+    queryKey: ["/api/weather/locations"],
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
   // Refresh feeds mutation
@@ -147,6 +154,32 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
+        {/* Weather Section */}
+        {weatherLocations.length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="text-thai-orange mr-2">🌤️</span>
+              สภาพอากาศ
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {weatherLocations.slice(0, 3).map((location) => (
+                <WeatherCard
+                  key={location.id}
+                  locationId={location.id}
+                  locationName={location.name}
+                />
+              ))}
+            </div>
+            <hr className="border-gray-200" />
+          </section>
+        )}
+
+        {/* News Section */}
+        <section>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+            <span className="text-thai-orange mr-2">📰</span>
+            ข่าวล่าสุด
+          </h2>
 
         {/* Loading State */}
         {articlesLoading && (
@@ -217,6 +250,7 @@ export default function Home() {
             </Button>
           </div>
         )}
+        </section>
 
         
       </main>
